@@ -1,0 +1,33 @@
+{
+    "name": "earc/parameter-transformer",
+    "description": "eArc - the explicit architecture framework - parameter transformer component",
+    "type": "library",
+    "license": "MIT",
+    "version": "0.0-dev",
+    "authors": [
+        {
+            "name": "Thomas Koudela",
+            "email": "thomas@koudela.net"
+        }
+    ],
+    "minimum-stability": "dev",
+    "prefer-stable" : true,
+    "require": {
+        "php": "^8.0",
+        "earc/cast": "^1.1"
+    },
+    "autoload": {
+        "psr-4": {
+            "eArc\\ParameterTransformer\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "eArc\\ParameterTransformerTests\\": "tests"
+        }
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^9.5",
+        "symfony/var-dumper": "^5.2"
+    }
+}
