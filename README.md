@@ -83,7 +83,7 @@ $result = (new ParameterTransformer())->constructFromTransform($fQCN);
         - string
         - every class (that fits the supplied input value)
     - self:
-        - `eArc\ParameterTransformer\ParameterTransformerFactoryInterface`
+        - `eArc\ParameterTransformer\Interfaces\ParameterTransformerFactoryInterface`
     - [earc/data](https://github.com/Koudela/eArc-data)
         - `eArc\Data\Entity\Interfaces\EntityInterface`
     - [earc/di](https://github.com/Koudela/eArc-di)

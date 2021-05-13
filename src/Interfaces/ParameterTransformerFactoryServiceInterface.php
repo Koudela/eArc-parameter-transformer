@@ -9,9 +9,12 @@
  * @license http://opensource.org/licenses/MIT MIT License
  */
 
-namespace eArc\ParameterTransformer;
+namespace eArc\ParameterTransformer\Interfaces;
 
-interface ParameterTransformerFactoryInterface
+interface ParameterTransformerFactoryServiceInterface
 {
-    public static function buildFromParameter($parameter): static;
+    /**
+     * Builds an object from its class
+     */
+    public function buildFromParameter(string $fQCN, $parameter): object|null;
 }
