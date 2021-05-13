@@ -13,6 +13,9 @@ namespace eArc\ParameterTransformer\PrivateServices;
 
 use eArc\ParameterTransformer\Exceptions\DiException;
 use eArc\ParameterTransformer\Exceptions\FactoryException;
+use eArc\ParameterTransformer\Exceptions\NoInputException;
+use eArc\ParameterTransformer\Exceptions\NullValueException;
+use eArc\ParameterTransformer\Interfaces\ConfigurationInterface;
 use eArc\ParameterTransformer\Interfaces\ParameterTransformerFactoryInterface;
 use eArc\ParameterTransformer\Interfaces\ParameterTransformerFactoryServiceInterface;
 use ReflectionException;
@@ -25,24 +28,38 @@ use ReflectionUnionType;
 class ArgumentTransformer
 {
     /**
-     * @throws DiException | FactoryException
+     * @throws DiException | FactoryException | NoInputException | NullValueException
      */
-    public function transformViaArgument($value, ReflectionParameter|ReflectionProperty $argument): mixed
+    public function transform(ReflectionParameter|ReflectionProperty $argument, InputProvider $inputProvider): mixed
     {
-        $rawType = $argument->getType();
+        $value = $this->transformViaArgument($argument, $inputProvider);
 
+        if (is_null($value) && !$inputProvider->getConfig()->nullIsAllowed()) {
+            throw new NullValueException();
+        }
+
+        $inputProvider->deleteLastInput();
+
+        return $value;
+    }
+
+    /**
+     * @throws DiException | FactoryException | NoInputException
+     */
+    public function transformViaArgument(ReflectionParameter|ReflectionProperty $argument, InputProvider $inputProvider): mixed
+    {
+        $config = $inputProvider->getConfig();
+        $value = $inputProvider->getInput($argument->getName());
+
+        $rawType = $argument->getType();
         $types = $rawType instanceof ReflectionUnionType ? $rawType->getTypes(): [$rawType];
 
         foreach ($types as $type) {
-            $newValue = $this->transformViaType($value, $type, $argument);
+            $newValue = $this->transformViaType($value, $type, $argument, $config);
 
             if (!is_null($newValue) && $newValue !== $value) {
-                break;
+                return $newValue;
             }
-        }
-
-        if (isset($newValue)) {
-            $value = $newValue;
         }
 
         if (is_null($value)) {
@@ -59,19 +76,19 @@ class ArgumentTransformer
     /**
      * @throws DiException | FactoryException
      */
-    protected function transformViaType(mixed $value, ReflectionType $type, ReflectionParameter|ReflectionProperty $argument): mixed
+    protected function transformViaType(mixed $value, ReflectionType $type, ReflectionParameter|ReflectionProperty $argument, ConfigurationInterface $config): mixed
     {
         if ('null' === $value && $type->allowsNull()) {
             $value = null;
         }
 
-        return $type instanceof ReflectionNamedType ? $this->transformViaNamedType($value, $type, $argument) : $value;
+        return $type instanceof ReflectionNamedType ? $this->transformViaNamedType($value, $type, $argument, $config) : $value;
     }
 
     /**
      * @throws DiException | FactoryException
      */
-    protected function transformViaNamedType(mixed $value, ReflectionNamedType $type, ReflectionParameter|ReflectionProperty $argument): mixed
+    protected function transformViaNamedType(mixed $value, ReflectionNamedType $type, ReflectionParameter|ReflectionProperty $argument, ConfigurationInterface $config): mixed
     {
         $name = $type->getName();
 
@@ -86,6 +103,10 @@ class ArgumentTransformer
         }
 
         $transformedName = $this->mapSpecialName($name, $argument);
+
+        if ($config->hasPredefinedValue($value)) {
+            return $config->getPredefinedValue($value);
+        }
 
         return class_exists($transformedName) ? $this->transformViaClassName($value, $transformedName) : $value;
     }

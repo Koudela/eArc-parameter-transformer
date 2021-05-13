@@ -11,7 +11,7 @@
 
 namespace eArc\ParameterTransformer\Interfaces;
 
-interface ConfigurationInterface extends ObjectTransformerConfigurationInterface, CallableTransformerConfigurationInterface
+interface ConfigurationInterface extends ObjectTransformerConfigurationInterface
 {
     /**
      * Returns an default input array.

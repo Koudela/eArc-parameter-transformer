@@ -27,27 +27,19 @@ class ObjectTransformer
 {
 
     /**
-     * @throws DiException | FactoryException
+     * @throws DiException | FactoryException | NoInputException  | NullValueException
      */
     public function objectTransform(object $target, array $input = null, ConfigurationInterface $config = null): object
     {
-        $config = $config ?? di_get(Configuration::class);
-        $input = $input ?? $config->getDefaultResource();
-
-        // no positional arguments
-        foreach ($input as $key => $value) {
-            if (!is_string($key)) {
-                unset($input[$key]);
-            }
-        }
+        $inputProvider = new InputProvider($input, $config);
 
         try {
             if ($config->isMethodsFirst()) {
-                $this->processMethods($input, $target, $config);
-                $this->processProperties($input, $target, $config);
+                $this->processMethods($target, $inputProvider);
+                $this->processProperties($target, $inputProvider);
             } else {
-                $this->processProperties($input, $target, $config);
-                $this->processMethods($input, $target, $config);
+                  $this->processProperties($target, $inputProvider);
+                $this->processMethods($target, $inputProvider);
             }
         } catch (InputIsEmptyException) {
         }
@@ -58,69 +50,43 @@ class ObjectTransformer
     /**
      * @throws InputIsEmptyException | DiException | FactoryException
      */
-    protected function processMethods(array &$input, object $target, ConfigurationInterface $config): void
+    protected function processMethods(object $target, InputProvider $inputProvider): void
     {
+        $config = $inputProvider->getConfig();
         $callableTransformer = di_get(CallableTransformer::class);
 
         foreach ($this->getMethods($target, $config) as $method) {
-            if (empty($input)) {
+            if ($inputProvider->inputIsEmpty()) {
                 throw new InputIsEmptyException();
             }
 
             try {
+                $inputProvider->initBackup();
                 $argv = $callableTransformer->callableTransform($method);
-
-                foreach ($argv as $key => $value) {
-                    unset($input[$config->getMapped($key)]);
-                }
 
                 $method->invoke($target, $argv);
             } catch (ReflectionException | NullValueException | NoInputException) {
                 // ReflectionException is never thrown since target is an real object
+                $inputProvider->restoreBackup();
             }
         }
     }
 
     /**
-     * @throws InputIsEmptyException | DiException | FactoryException
+     * @throws DiException | FactoryException | NoInputException  | NullValueException | InputIsEmptyException
      */
-    protected function processProperties(array &$input, object $target, ConfigurationInterface $config): void
+    protected function processProperties(object $target, InputProvider $inputProvider): void
     {
+        $config = $inputProvider->getConfig();
         $argumentTransformer = di_get(ArgumentTransformer::class);
 
         foreach ($this->getProperties($target, $config) as $property) {
-            if (empty($input)) {
+            if ($inputProvider->inputIsEmpty()) {
                 throw new InputIsEmptyException();
             }
-
-            $name = $config->getMapped($property->getName());
-
-            if (!array_key_exists($name, $input)) {
-                continue;
-            }
+            $value = $argumentTransformer->transform($property, $inputProvider);
 
             $property->setAccessible(true);
-
-            if ($config->hasPredefinedValue($name)) {
-                $property->setValue($target, $config->getPredefinedValue($name));
-
-                continue;
-            }
-
-            if (array_key_exists($name, $input)) {
-                $inputValue = $input[$name];
-            } elseif ($config->noInputIsAllowed()) {
-                $inputValue = null;
-            } else {
-                continue;
-            }
-
-            $value = $argumentTransformer->transformViaArgument($inputValue, $property);
-
-            if (is_null($value) && !$config->nullIsAllowed()) {
-                continue;
-            }
-
             $property->setValue($target, $value);
         }
     }

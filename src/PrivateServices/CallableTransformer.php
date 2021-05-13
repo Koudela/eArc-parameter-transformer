@@ -12,7 +12,6 @@
 namespace eArc\ParameterTransformer\PrivateServices;
 
 use Closure;
-use eArc\ParameterTransformer\Configuration;
 use eArc\ParameterTransformer\Exceptions\DiException;
 use eArc\ParameterTransformer\Exceptions\FactoryException;
 use eArc\ParameterTransformer\Exceptions\NoInputException;
@@ -33,37 +32,13 @@ class CallableTransformer
      */
     public function callableTransform(string|callable|ReflectionFunctionAbstract $target, array $input = null, ConfigurationInterface $config = null): array
     {
+        $inputProvider = new InputProvider($input, $config);
         $argumentTransformer = di_get(ArgumentTransformer::class);
-        $config = $config ?? di_get(Configuration::class);
-        $input = $input ?? $config->getDefaultResource();
 
         $argv = [];
-        $pos = 0;
 
         foreach ($this->getCallableArguments($target) as $argument) {
-            $name = $config->getMapped($argument->getName());
-
-            if ($config->hasPredefinedValue($name)) {
-                $argv[$argument->getName()] = $config->getPredefinedValue($name);
-
-                continue;
-            }
-
-            if (array_key_exists($name, $input)) {
-                $inputValue = $input[$name];
-            } elseif (array_key_exists($pos, $input)) {
-                $inputValue = $input[$pos++];
-            } elseif ($config->noInputIsAllowed()) {
-                $inputValue = null;
-            } else {
-                throw new NoInputException();
-            }
-
-            $value = $argumentTransformer->transformViaArgument($inputValue, $argument);
-
-            if (is_null($value) && !$config->nullIsAllowed()) {
-                throw new NullValueException();
-            }
+            $value = $argumentTransformer->transform($argument, $inputProvider);
 
             $argv[$argument->getName()] = $value;
         }

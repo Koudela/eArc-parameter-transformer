@@ -26,11 +26,9 @@ class ParameterTransformer
     /**
      * @throws ReflectionException | NullValueException | NoInputException | DiException | FactoryException
      */
-    public function castFromTransform(string|object $target, array $input = null, Configuration $config = null): object
+    public function castFromTransform(string $target, array $input = null, Configuration $config = null): object
     {
-        if (is_string($target)) {
-            $target = $this->constructFromTransform($target, $input, $config);
-        }
+        $target = $this->constructFromTransform($target, $input, $config);
 
         return $this->objectTransform($target, $input, $config);
     }
@@ -44,7 +42,7 @@ class ParameterTransformer
     }
 
     /**
-     * @throws DiException | FactoryException
+     * @throws DiException | FactoryException | NoInputException | NullValueException
      */
     public function objectTransform(object $target, array $input = null, ConfigurationInterface $config = null): object
     {
@@ -64,6 +62,6 @@ class ParameterTransformer
      */
     public function callableTransform(string|callable|ReflectionFunctionAbstract $target, array $input = null, ConfigurationInterface $config = null): array
     {
-        return di_get(CallableTransformer::class)->callableTransform($$target, $input, $config);
+        return di_get(CallableTransformer::class)->callableTransform($target, $input, $config);
     }
 }
