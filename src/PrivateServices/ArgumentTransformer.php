@@ -11,6 +11,7 @@
 
 namespace eArc\ParameterTransformer\PrivateServices;
 
+use eArc\DI\Exceptions\MakeClassException;
 use eArc\ParameterTransformer\Exceptions\DiException;
 use eArc\ParameterTransformer\Exceptions\FactoryException;
 use eArc\ParameterTransformer\Exceptions\NoInputException;
@@ -142,7 +143,14 @@ class ArgumentTransformer
                 return $result;
             }
         }
-        return $value;
+
+        try {
+            return di_get($fQCN);
+        }
+        /** @noinspection PhpRedundantCatchClauseInspection */
+        catch (MakeClassException) {
+            return $value;
+        }
     }
 
     /**

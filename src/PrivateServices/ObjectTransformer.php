@@ -102,7 +102,7 @@ class ObjectTransformer
         $maxParameterCnt = $config->getMaxParameterCount();
 
         foreach ($reflectionMethods as $method) {
-            if ($method->getNumberOfParameters() <= $maxParameterCnt) {
+            if ($method->getNumberOfParameters() <= $maxParameterCnt && $method->getNumberOfParameters() > 0) {
                 $methods[] = $method;
             }
         }

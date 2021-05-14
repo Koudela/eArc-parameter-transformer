@@ -29,6 +29,7 @@ class Configuration implements ConfigurationInterface
     protected int $maxParameterCount = 1;
     protected bool $nullIsAllowed = true;
     protected bool $noInputIsAllowed = false;
+    protected bool $usePropertyTransformation = true;
 
     public function getDefaultResource(): array
     {
@@ -141,6 +142,18 @@ class Configuration implements ConfigurationInterface
     public function setNoInputIsAllowed(bool $noInputIsAllowed): static
     {
         $this->noInputIsAllowed = $noInputIsAllowed;
+
+        return $this;
+    }
+
+    public function usePropertyTransformation(): bool
+    {
+        return $this->usePropertyTransformation;
+    }
+
+    public function setUsePropertyTransformation(bool $usePropertyTransformation): static
+    {
+        $this->usePropertyTransformation = $usePropertyTransformation;
 
         return $this;
     }
