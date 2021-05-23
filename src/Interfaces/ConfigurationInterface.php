@@ -20,15 +20,15 @@ interface ConfigurationInterface extends ObjectTransformerConfigurationInterface
     /**
      * If the key is mapped it returns the mapped key and the key otherwise.
      */
-    public function getMapped(string $key): string;
+    public function getMapped(string $key): int|string;
     /**
      * Returns true if there is a predefined value for the typehint and false otherwise.
      */
-    public function hasPredefinedValue(string $typeHint): bool;
+    public function hasPredefinedTypeHint(string $typeHint): bool;
     /**
      * Returns the predefined value for the typehint or null if there is no predefined value.
      */
-    public function getPredefinedValue(string $typeHint): mixed;
+    public function getPredefinedTypeHint(string $typeHint): mixed;
     /**
      * Returns true if no corresponding input value should be treated as null,
      * and false if a NoInputException shall be thrown.

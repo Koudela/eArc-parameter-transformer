@@ -22,12 +22,12 @@ class Configuration implements ConfigurationInterface
     /** @var array<string, string> */
     protected array $mapping = [];
     /** @var array<string, mixed> */
-    protected array $predefinedValues = [];
+    protected array $predefinedTypeHint = [];
     protected bool $methodsFirst = true;
     protected int $filterMethods = ReflectionMethod::IS_PUBLIC;
     protected int $filterProperties = ReflectionProperty::IS_PUBLIC;
     protected int $maxParameterCount = 1;
-    protected bool $nullIsAllowed = true;
+    protected bool $nullIsAllowed = false;
     protected bool $noInputIsAllowed = false;
     protected bool $usePropertyTransformation = true;
 
@@ -45,7 +45,7 @@ class Configuration implements ConfigurationInterface
         return $this;
     }
 
-    public function getMapped(string $key): string
+    public function getMapped(string $key): int|string
     {
         return array_key_exists($key, $this->mapping) ? $this->mapping[$key] : $key;
     }
@@ -57,19 +57,19 @@ class Configuration implements ConfigurationInterface
         return $this;
     }
 
-    public function hasPredefinedValue(string $typeHint): bool
+    public function hasPredefinedTypeHint(string $typeHint): bool
     {
-        return array_key_exists($typeHint, $this->predefinedValues);
+        return array_key_exists($typeHint, $this->predefinedTypeHint);
     }
 
-    public function getPredefinedValue(string $typeHint): mixed
+    public function getPredefinedTypeHint(string $typeHint): mixed
     {
-        return $this->predefinedValues[$typeHint];
+        return $this->predefinedTypeHint[$typeHint];
     }
 
-    public function setPredefinedValues(array $predefinedValues): static
+    public function setPredefinedTypeHints(array $predefinedValues): static
     {
-        $this->predefinedValues = $predefinedValues;
+        $this->predefinedTypeHint = $predefinedValues;
 
         return $this;
     }

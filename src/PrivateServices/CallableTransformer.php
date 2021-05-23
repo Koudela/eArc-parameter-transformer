@@ -32,7 +32,14 @@ class CallableTransformer
      */
     public function callableTransform(string|callable|ReflectionFunctionAbstract $target, array $input = null, ConfigurationInterface $config = null): array
     {
-        $inputProvider = new InputProvider($input, $config);
+        return $this->callableTransformWithProvider($target, new InputProvider($input, $config));
+    }
+
+    /**
+     * @throws ReflectionException | NullValueException | NoInputException | DiException | FactoryException
+     */
+    public function callableTransformWithProvider(string|callable|ReflectionFunctionAbstract $target, InputProvider $inputProvider): array
+    {
         $argumentTransformer = di_get(ArgumentTransformer::class);
 
         $argv = [];
@@ -59,7 +66,7 @@ class CallableTransformer
             return $target->getParameters();
         }
 
-        return is_callable($target)
+        return is_callable($target) || is_string($target) && function_exists($target)
             ? $this->getCallableReflection($target)->getParameters()
             : (new ReflectionClass($target))->getConstructor()->getParameters();
     }

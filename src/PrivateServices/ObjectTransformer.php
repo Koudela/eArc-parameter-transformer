@@ -27,18 +27,23 @@ class ObjectTransformer
 {
 
     /**
-     * @throws DiException | FactoryException | NoInputException  | NullValueException
+     * @throws DiException | FactoryException
      */
     public function objectTransform(object $target, array $input = null, ConfigurationInterface $config = null): object
     {
         $inputProvider = new InputProvider($input, $config);
+        $config = $inputProvider->getConfig();
 
         try {
             if ($config->isMethodsFirst()) {
                 $this->processMethods($target, $inputProvider);
-                $this->processProperties($target, $inputProvider);
+                if ($config->usePropertyTransformation()) {
+                    $this->processProperties($target, $inputProvider);
+                }
             } else {
-                  $this->processProperties($target, $inputProvider);
+                if ($config->usePropertyTransformation()) {
+                    $this->processProperties($target, $inputProvider);
+                }
                 $this->processMethods($target, $inputProvider);
             }
         } catch (InputIsEmptyException) {
@@ -62,9 +67,9 @@ class ObjectTransformer
 
             try {
                 $inputProvider->initBackup();
-                $argv = $callableTransformer->callableTransform($method);
-
-                $method->invoke($target, $argv);
+                $argv = $callableTransformer->callableTransformWithProvider($method, $inputProvider);
+                $method->setAccessible(true);
+                $method->invokeArgs($target, $argv);
             } catch (ReflectionException | NullValueException | NoInputException) {
                 // ReflectionException is never thrown since target is an real object
                 $inputProvider->restoreBackup();
@@ -73,7 +78,7 @@ class ObjectTransformer
     }
 
     /**
-     * @throws DiException | FactoryException | NoInputException  | NullValueException | InputIsEmptyException
+     * @throws DiException | FactoryException | InputIsEmptyException
      */
     protected function processProperties(object $target, InputProvider $inputProvider): void
     {
@@ -84,10 +89,17 @@ class ObjectTransformer
             if ($inputProvider->inputIsEmpty()) {
                 throw new InputIsEmptyException();
             }
-            $value = $argumentTransformer->transform($property, $inputProvider);
 
-            $property->setAccessible(true);
-            $property->setValue($target, $value);
+            try {
+                $inputProvider->initBackup();
+                $value = $argumentTransformer->transform($property, $inputProvider);
+
+                $property->setAccessible(true);
+                $property->setValue($target, $value);
+            } catch (NullValueException | NoInputException) {
+                $inputProvider->restoreBackup();
+            }
+
         }
     }
 

@@ -53,7 +53,7 @@ class InputProvider
             $this->lastInputKey = $key;
 
             return $this->input[$name];
-        } elseif (array_key_exists($key, $this->input)) {
+        } elseif (array_key_exists($this->pos, $this->input)) {
             $this->lastInputKey = $this->pos;
 
             return $this->input[$this->pos];

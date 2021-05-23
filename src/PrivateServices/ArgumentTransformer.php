@@ -35,22 +35,19 @@ class ArgumentTransformer
     {
         $value = $this->transformViaArgument($argument, $inputProvider);
 
-        if (is_null($value) && !$inputProvider->getConfig()->nullIsAllowed()) {
-            throw new NullValueException();
-        }
-
         $inputProvider->deleteLastInput();
 
         return $value;
     }
 
     /**
-     * @throws DiException | FactoryException | NoInputException
+     * @throws DiException | FactoryException | NoInputException | NullValueException
      */
-    public function transformViaArgument(ReflectionParameter|ReflectionProperty $argument, InputProvider $inputProvider): mixed
+    protected function transformViaArgument(ReflectionParameter|ReflectionProperty $argument, InputProvider $inputProvider): mixed
     {
         $config = $inputProvider->getConfig();
         $value = $inputProvider->getInput($argument->getName());
+        $newValue = $value;
 
         $rawType = $argument->getType();
         $types = $rawType instanceof ReflectionUnionType ? $rawType->getTypes(): [$rawType];
@@ -63,11 +60,15 @@ class ArgumentTransformer
             }
         }
 
+        $value = $newValue;
+
         if (is_null($value)) {
             try {
                 return $argument->getDefaultValue();
             } catch (ReflectionException) {
-                return null;
+                if (!$rawType->allowsNull() && !$inputProvider->getConfig()->nullIsAllowed()) {
+                    throw new NullValueException();
+                }
             }
         }
 
@@ -93,11 +94,11 @@ class ArgumentTransformer
     {
         $name = $type->getName();
 
-        if ($type->isBuiltin()) {
+        if ($type->isBuiltin() && !is_null($value)) {
             return match ($name) {
-                'int', 'integer' => (int) $value,
-                'bool', 'boolean' => (bool) $value,
-                'float', 'double', 'real' => (float) $value,
+                'int' => (int) $value,
+                'bool' => (bool) $value,
+                'float' => (float) $value,
                 'string' => (string) $value,
                 default => $value,
             };
@@ -105,8 +106,8 @@ class ArgumentTransformer
 
         $transformedName = $this->mapSpecialName($name, $argument);
 
-        if ($config->hasPredefinedValue($value)) {
-            return $config->getPredefinedValue($value);
+        if ($config->hasPredefinedTypeHint($name)) {
+            return $config->getPredefinedTypeHint($name);
         }
 
         return class_exists($transformedName) ? $this->transformViaClassName($value, $transformedName) : $value;

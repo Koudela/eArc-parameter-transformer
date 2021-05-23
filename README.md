@@ -14,8 +14,9 @@ Lightweight parameter transformer component. Use type hints to auto-wire
     - [how the input array is determined](#how-the-input-array-is-determined)
     - [how the input value is chosen](#how-the-input-value-is-chosen)
     - [how type hints are transformed](#how-type-hints-are-transformed)
-    - [how callables are transformed](#how-callables-are-transformed)
+    - [how callables and functions are transformed](#how-callables-and-functions-are-transformed)
     - [how objects are transformed](#how-objects-are-transformed)
+- [additional info](#additional-info)
 - [releases](#releases)
     - [release 0.0](#release-00)
 
@@ -44,8 +45,8 @@ the service `ParameterTransformer`. The parameter transformer exposes five metho
   properties from input)
 - `callableTransform` (generates an array of arguments from input the `callable` 
   can be called with)
-- `callFromTransform` (shortcut function: calls the `callable` with the arguments 
-  provided via `callableTransform`)
+- `callFromTransform` (shortcut function: calls the `callable` or `function` with 
+  the arguments provided via `callableTransform`)
 - `constructFromTransform` (shortcut function: instantiates an object with the 
   constructor arguments provided via `callableTransform`)
 - `castFromTransform` (shortcut function: retrieves an object via `constructFromTransform` 
@@ -151,18 +152,19 @@ Instead of throwing an exception a `null` value is used.
 
 ### how type hints are transformed
 
-1. If `null` is type hinted plus the starting value is `'null'` the starting value 
-   will be treated as `null`.
-2. For build in primitive types the starting value is cast to the result value.
-3. If it's not a build in primitive type plus a predefined value exists, the predefined
-   value is used as result value.
+1. If `null` is type hinted plus the starting value is the string  `'null'` the 
+   starting value will be treated as `null`.
+2. For build in primitive types the starting value is cast to the result value if
+   it is not `null`.
+3. If it's not a build in primitive type plus a predefined type hint value exists, 
+   the predefined type hint value is used as result value.
    
-You set the predefined values via the `setPredefinedValues()` method:
+You set the predefined type hint values via the `setPredefinedTypeHints()` method:
 
 ```php
 use eArc\ParameterTransformer\Configuration;
 
-$config = (new Configuration())->setPredefinedValues([
+$config = (new Configuration())->setPredefinedTypeHints([
     MyServiceOne::class => new MyServiceOne(),
     MyServiceTwo::class => new MyServiceTwo(),
     //...
@@ -238,29 +240,30 @@ di_tag(ParameterTransformerFactoryServiceInterface::class, MyEntityTypeHintingSe
 8. If the result value is `null` and there is a default value hinted, the default
    value is the new result value.
 
-9. If no `null` value are allowed a `NullValueException` is thrown.
+9. If the result is a `null` value, but the type hint does not allow `null` a 
+   `NullValueException` is thrown.
 
-You can activate this behaviour via the `setNullIsAllowed()` method:
+You can disable this behaviour via the `setNullIsAllowed()` method:
 
 ```php
 use eArc\ParameterTransformer\Configuration;
 
-$config = (new Configuration())->setNullIsAllowed(false);
+$config = (new Configuration())->setNullIsAllowed(true);
 ```
 
 10. Transformed input values are removed from the input array.
 
-### how callables are transformed
+### how callables and functions are transformed
 
 1. If the target is a class string, the constructor method retrieved.
-2. At the parameters and their type hints
+2. For the parameters and their type hints
    [type hint transformation](#how-type-hints-are-transformed) is applied.
 3. The result is returned as ordered array with the parameter names as keys.
 
 ### how objects are transformed
 
-In contrast to callables there is no result array. The transformation is applied 
-to the object directly.
+In contrast to callables and functions there is no result array. The transformation 
+is applied to the object directly.
 
 1. The methods are processed first and then the properties. 
    
@@ -311,6 +314,16 @@ $config = (new Configuration())
     ->setUsePropertyTransformation(false);
 ```
 
+## additional info
+
+There is no recursion implemented. Building type hinted classes via the 
+earc/parameter-transformer has to be done explicit. The input data can hold complex 
+data-structures thus preprocessing is an option if the object structure is known.
+
+To map data from an input array to an arbitrary object can be done more efficient
+using [earc/cast](https://github.com/Koudela/eArc-cast) if it can be done by 
+considering the property names without the type hints.
+
 ## releases
 
 ### release 0.0
@@ -327,5 +340,7 @@ $config = (new Configuration())
     - self:
         - `ParameterTransformerFactoryInterface`
     - extern:
-        - all classes that can be build via `di_get()` of [earc/di](https://github.com/Koudela/eArc-di)
+        - all classes that can be build via the `di_get()` function of 
+          the [earc/di](https://github.com/Koudela/eArc-di) package
 - type hint transformation is extendable via the `ParameterTransformerFactoryServiceInterface`
+  to define your own class type hint transformation
