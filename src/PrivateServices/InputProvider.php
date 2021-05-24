@@ -66,17 +66,19 @@ class InputProvider
 
     public function deleteLastInput(): void
     {
-        if (is_string($this->lastInputKey)) {
+        if (is_string($this->lastInputKey) && array_key_exists($this->lastInputKey, $this->input)) {
             $this->backup[$this->lastInputKey] = $this->input[$this->lastInputKey];
 
             unset($this->input[$this->lastInputKey]);
+
+            $this->lastInputKey = null;
         }
 
         if (is_int($this->lastInputKey)) {
             $this->pos++;
-        }
 
-        $this->lastInputKey = null;
+            $this->lastInputKey = null;
+        }
     }
 
     public function initBackup(): void

@@ -3,7 +3,7 @@
     "description": "eArc - the explicit architecture framework - parameter transformer component",
     "type": "library",
     "license": "MIT",
-    "version": "0.0",
+    "version": "0.0.1",
     "authors": [
         {
             "name": "Thomas Koudela",
